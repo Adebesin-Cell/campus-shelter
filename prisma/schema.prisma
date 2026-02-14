@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Enums ────────────────────────────────────────────────
+
+enum Role {
+  STUDENT
+  LANDLORD
+  ADMIN
+}
+
+enum RoomType {
+  SINGLE
+  SELF_CON
+  MINI_FLAT
+}
+
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+// ─── User ─────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String?
+  password  String
+  role      Role     @default(STUDENT)
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  properties          Property[]
+  bookings            Booking[]
+  reviews             Review[]
+  sentMessages        Message[]            @relation("SentMessages")
+  receivedMessages    Message[]            @relation("ReceivedMessages")
+  documents           Document[]
+  maintenanceRequests MaintenanceRequest[]
+
+  @@map("users")
+}
+
+// ─── Property ─────────────────────────────────────────────
+
+model Property {
+  id                String   @id @default(cuid())
+  title             String
+  description       String
+  priceMonthly      Float
+  priceWeekly       Float?
+  location          String
+  latitude          Float?
+  longitude         Float?
+  rooms             Int
+  bathrooms         Int
+  furnished         Boolean  @default(false)
+  wifi              Boolean  @default(false)
+  electricityBackup Boolean  @default(false)
+  water             Boolean  @default(false)
+  security          Boolean  @default(false)
+  roomType          RoomType
+  distanceFromFUTA  Float?
+  availableFrom     DateTime
+  approved          Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  landlordId          String
+  landlord            User                 @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  bookings            Booking[]
+  reviews             Review[]
+  availability        Availability[]
+  maintenanceRequests MaintenanceRequest[]
+
+  @@map("properties")
+}
+
+// ─── Availability ─────────────────────────────────────────
+
+model Availability {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  date       DateTime
+  isBooked   Boolean  @default(false)
+
+  @@unique([propertyId, date])
+  @@map("availabilities")
+}
+
+// ─── Booking ──────────────────────────────────────────────
+
+model Booking {
+  id         String        @id @default(cuid())
+  studentId  String
+  student    User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  status     BookingStatus @default(PENDING)
+  leaseStart DateTime
+  leaseEnd   DateTime
+  createdAt  DateTime      @default(now())
+
+  // Relations
+  lease Lease?
+
+  @@map("bookings")
+}
+
+// ─── Lease ────────────────────────────────────────────────
+
+model Lease {
+  id          String   @id @default(cuid())
+  bookingId   String   @unique
+  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  documentUrl String
+  signedAt    DateTime @default(now())
+
+  @@map("leases")
+}
+
+// ─── Review ───────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(cuid())
+  rating     Int // 1-5
+  comment    String?
+  studentId  String
+  student    User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([studentId, propertyId])
+  @@map("reviews")
+}
+
+// ─── Message ──────────────────────────────────────────────
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  propertyId String?
+  content    String
+  createdAt  DateTime @default(now())
+
+  @@map("messages")
+}
+
+// ─── Maintenance Request ──────────────────────────────────
+
+model MaintenanceRequest {
+  id          String            @id @default(cuid())
+  propertyId  String
+  property    Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     User              @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  description String
+  status      MaintenanceStatus @default(OPEN)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@map("maintenance_requests")
+}
+
+// ─── Document ─────────────────────────────────────────────
+
+model Document {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  fileUrl   String
+  createdAt DateTime @default(now())
+
+  @@map("documents")
+}
