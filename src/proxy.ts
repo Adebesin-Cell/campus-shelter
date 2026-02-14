@@ -2,7 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/api/docs", "/api-docs"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	// Only protect /api/* routes
