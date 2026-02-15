@@ -1,8 +1,8 @@
-import type { OpenAPIV3_1 } from "openapi-types";
+import type { OpenAPIV3 } from "openapi-types";
 
-export function getApiDocs(): OpenAPIV3_1.Document {
+export function getApiDocs(): OpenAPIV3.Document {
 	return {
-		openapi: "3.1.0",
+		openapi: "3.0.3",
 		info: {
 			title: "Campus Shelter — Student Housing API",
 			version: "1.0.0",
@@ -1567,5 +1567,5 @@ export function getApiDocs(): OpenAPIV3_1.Document {
 				},
 			},
 		},
-	} as OpenAPIV3_1.Document;
+	} as OpenAPIV3.Document;
 }
