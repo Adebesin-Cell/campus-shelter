@@ -2,6 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 
 const PUBLIC_PATHS = ["/api/docs", "/api-docs"];
 
+const CORS_HEADERS = {
+	"Access-Control-Allow-Origin": "*",
+	"Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
+	"Access-Control-Allow-Headers": "Content-Type, Authorization, x-api-key",
+};
+
 export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
@@ -10,9 +16,21 @@ export function proxy(request: NextRequest) {
 		return NextResponse.next();
 	}
 
+	// Handle CORS preflight requests immediately — no API key check
+	if (request.method === "OPTIONS") {
+		return new NextResponse(null, {
+			status: 204,
+			headers: CORS_HEADERS,
+		});
+	}
+
 	// Allow Swagger UI and spec through without API key
 	if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-		return NextResponse.next();
+		const response = NextResponse.next();
+		for (const [key, value] of Object.entries(CORS_HEADERS)) {
+			response.headers.set(key, value);
+		}
+		return response;
 	}
 
 	const apiKey = request.headers.get("x-api-key");
@@ -21,21 +39,18 @@ export function proxy(request: NextRequest) {
 	if (!expectedKey || apiKey !== expectedKey) {
 		return NextResponse.json(
 			{ success: false, message: "Invalid or missing API key" },
-			{ status: 401 },
+			{
+				status: 401,
+				headers: CORS_HEADERS,
+			},
 		);
 	}
 
-	// Set CORS headers
+	// Set CORS headers on the successful response
 	const response = NextResponse.next();
-	response.headers.set("Access-Control-Allow-Origin", "*");
-	response.headers.set(
-		"Access-Control-Allow-Methods",
-		"GET, POST, PATCH, DELETE, OPTIONS",
-	);
-	response.headers.set(
-		"Access-Control-Allow-Headers",
-		"Content-Type, Authorization, x-api-key",
-	);
+	for (const [key, value] of Object.entries(CORS_HEADERS)) {
+		response.headers.set(key, value);
+	}
 	return response;
 }
 
