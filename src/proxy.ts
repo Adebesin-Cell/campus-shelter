@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { env } from "./lib/env";
 
 const PUBLIC_PATHS = ["/api/docs", "/api-docs"];
 
@@ -34,7 +35,7 @@ export function proxy(request: NextRequest) {
 	}
 
 	const apiKey = request.headers.get("x-api-key");
-	const expectedKey = process.env.API_KEY;
+	const expectedKey = env.API_KEY;
 
 	if (!expectedKey || apiKey !== expectedKey) {
 		return NextResponse.json(
