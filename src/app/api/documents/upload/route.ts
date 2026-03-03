@@ -51,9 +51,16 @@ export async function POST(request: NextRequest) {
 		const fileUrl = `/uploads/${filename}`;
 
 		// Store in database
+		let targetUserId = user.userId;
+		const requestedTargetId = formData.get("targetUserId") as string | null;
+
+		if (user.role === "ADMIN" && requestedTargetId) {
+			targetUserId = requestedTargetId;
+		}
+
 		const document = await prisma.document.create({
 			data: {
-				userId: user.userId,
+				userId: targetUserId,
 				type,
 				fileUrl,
 			},

@@ -58,6 +58,7 @@ export const createPropertySchema = z.object({
 	roomType: z.enum(["SINGLE", "SELF_CON", "MINI_FLAT"]),
 	distanceFromFUTA: z.number().optional(),
 	availableFrom: z.string().datetime({ message: "Invalid date format" }),
+	landlordId: z.string().optional(),
 });
 
 export const updatePropertySchema = createPropertySchema.partial();

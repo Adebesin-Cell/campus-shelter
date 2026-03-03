@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
 	try {
 		const user = requireAuth(request);
-		requireRole(user, "LANDLORD");
+		requireRole(user, "LANDLORD", "ADMIN");
 
 		const body = await request.json();
 		const parsed = createPropertySchema.safeParse(body);
@@ -123,11 +123,17 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// If admin, they can specify a landlordId. If landlord, it's always their own ID.
+		let landlordId = user.userId;
+		if (user.role === "ADMIN" && parsed.data.landlordId) {
+			landlordId = parsed.data.landlordId;
+		}
+
 		const property = await prisma.property.create({
 			data: {
 				...parsed.data,
 				availableFrom: new Date(parsed.data.availableFrom),
-				landlordId: user.userId,
+				landlordId,
 			},
 			include: {
 				landlord: {
@@ -140,7 +146,7 @@ export async function POST(request: NextRequest) {
 	} catch (error) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
-				? forbidden("Only landlords can create properties")
+				? forbidden("Only landlords and admins can create properties")
 				: unauthorized();
 		}
 		console.error("[Properties POST Error]", error);
