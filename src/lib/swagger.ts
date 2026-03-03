@@ -21,7 +21,10 @@ export function getApiDocs(): OpenAPIV3.Document {
 
 		// ── Tags ──────────────────────────────────────────
 		tags: [
-			{ name: "Auth", description: "Registration and login" },
+			{
+				name: "Auth",
+				description: "Registration, login, and password management",
+			},
 			{ name: "Properties", description: "Property listing CRUD and search" },
 			{ name: "Bookings", description: "Booking management" },
 			{ name: "Leases", description: "Lease document management" },
@@ -134,6 +137,107 @@ export function getApiDocs(): OpenAPIV3.Document {
 								},
 							},
 						},
+						"401": { $ref: "#/components/responses/Unauthorized" },
+					},
+				},
+			},
+
+			"/api/auth/forgot-password": {
+				post: {
+					tags: ["Auth"],
+					summary: "Request password reset",
+					description:
+						"Send a password reset token to the user's email. Always returns success to avoid leaking whether an email exists.",
+					security: [],
+					requestBody: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: {
+									$ref: "#/components/schemas/ForgotPasswordRequest",
+								},
+								example: { email: "john@futa.edu.ng" },
+							},
+						},
+					},
+					responses: {
+						"200": {
+							description: "Reset email sent (if account exists)",
+							content: {
+								"application/json": {
+									schema: { $ref: "#/components/schemas/MessageResponse" },
+								},
+							},
+						},
+					},
+				},
+			},
+
+			"/api/auth/reset-password": {
+				post: {
+					tags: ["Auth"],
+					summary: "Reset password with token",
+					description:
+						"Reset the user's password using a valid reset token received via email.",
+					security: [],
+					requestBody: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: {
+									$ref: "#/components/schemas/ResetPasswordRequest",
+								},
+								example: {
+									token: "abc123resettoken",
+									newPassword: "newpassword123",
+								},
+							},
+						},
+					},
+					responses: {
+						"200": {
+							description: "Password reset successfully",
+							content: {
+								"application/json": {
+									schema: { $ref: "#/components/schemas/MessageResponse" },
+								},
+							},
+						},
+						"400": { $ref: "#/components/responses/BadRequest" },
+					},
+				},
+			},
+
+			"/api/auth/change-password": {
+				post: {
+					tags: ["Auth"],
+					summary: "Change password (authenticated)",
+					description:
+						"Change the current user's password. Requires valid current password.",
+					requestBody: {
+						required: true,
+						content: {
+							"application/json": {
+								schema: {
+									$ref: "#/components/schemas/ChangePasswordRequest",
+								},
+								example: {
+									currentPassword: "password123",
+									newPassword: "newpassword123",
+								},
+							},
+						},
+					},
+					responses: {
+						"200": {
+							description: "Password changed successfully",
+							content: {
+								"application/json": {
+									schema: { $ref: "#/components/schemas/MessageResponse" },
+								},
+							},
+						},
+						"400": { $ref: "#/components/responses/BadRequest" },
 						"401": { $ref: "#/components/responses/Unauthorized" },
 					},
 				},
@@ -1195,6 +1299,41 @@ export function getApiDocs(): OpenAPIV3.Document {
 						password: { type: "string" },
 					},
 				},
+				ForgotPasswordRequest: {
+					type: "object",
+					required: ["email"],
+					properties: {
+						email: { type: "string", format: "email" },
+					},
+				},
+				ResetPasswordRequest: {
+					type: "object",
+					required: ["token", "newPassword"],
+					properties: {
+						token: { type: "string" },
+						newPassword: { type: "string", minLength: 6 },
+					},
+				},
+				ChangePasswordRequest: {
+					type: "object",
+					required: ["currentPassword", "newPassword"],
+					properties: {
+						currentPassword: { type: "string" },
+						newPassword: { type: "string", minLength: 6 },
+					},
+				},
+				MessageResponse: {
+					type: "object",
+					properties: {
+						success: { type: "boolean", example: true },
+						data: {
+							type: "object",
+							properties: {
+								message: { type: "string" },
+							},
+						},
+					},
+				},
 				CreatePropertyRequest: {
 					type: "object",
 					required: [
@@ -1225,6 +1364,11 @@ export function getApiDocs(): OpenAPIV3.Document {
 						roomType: {
 							type: "string",
 							enum: ["SINGLE", "SELF_CON", "MINI_FLAT"],
+						},
+						images: {
+							type: "array",
+							items: { type: "string", format: "uri" },
+							description: "Array of image URLs",
 						},
 						distanceFromFUTA: { type: "number" },
 						availableFrom: { type: "string", format: "date-time" },
@@ -1331,6 +1475,10 @@ export function getApiDocs(): OpenAPIV3.Document {
 						roomType: {
 							type: "string",
 							enum: ["SINGLE", "SELF_CON", "MINI_FLAT"],
+						},
+						images: {
+							type: "array",
+							items: { type: "string", format: "uri" },
 						},
 						distanceFromFUTA: { type: "number" },
 						availableFrom: { type: "string", format: "date-time" },

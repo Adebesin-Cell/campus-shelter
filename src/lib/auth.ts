@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import type { NextRequest } from "next/server";
@@ -76,6 +77,12 @@ export function requireRole(user: AuthUser, ...roles: Role[]): void {
 	if (!roles.includes(user.role)) {
 		throw new AuthError("Forbidden");
 	}
+}
+
+// ─── Reset Token ─────────────────────────────────────────
+
+export function generateResetToken(): string {
+	return crypto.randomBytes(32).toString("hex");
 }
 
 export class AuthError extends Error {

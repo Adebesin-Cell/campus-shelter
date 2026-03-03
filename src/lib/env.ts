@@ -13,6 +13,11 @@ export const env = createEnv({
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
+		SMTP_HOST: z.string().optional().default("smtp.gmail.com"),
+		SMTP_PORT: z.coerce.number().optional().default(587),
+		SMTP_USER: z.string().optional(),
+		SMTP_PASS: z.string().optional(),
+		SMTP_FROM: z.string().optional().default("noreply@campusshelter.com"),
 	},
 
 	/**
@@ -32,6 +37,11 @@ export const env = createEnv({
 		JWT_SECRET: process.env.JWT_SECRET,
 		API_KEY: process.env.API_KEY,
 		NODE_ENV: process.env.NODE_ENV,
+		SMTP_HOST: process.env.SMTP_HOST,
+		SMTP_PORT: process.env.SMTP_PORT,
+		SMTP_USER: process.env.SMTP_USER,
+		SMTP_PASS: process.env.SMTP_PASS,
+		SMTP_FROM: process.env.SMTP_FROM,
 	},
 
 	/**

@@ -54,8 +54,23 @@ model User {
   receivedMessages    Message[]            @relation("ReceivedMessages")
   documents           Document[]
   maintenanceRequests MaintenanceRequest[]
+  passwordResets      PasswordReset[]
 
   @@map("users")
+}
+
+// ─── Password Reset ──────────────────────────────────────
+
+model PasswordReset {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("password_resets")
 }
 
 // ─── Property ─────────────────────────────────────────────
@@ -76,6 +91,7 @@ model Property {
   electricityBackup Boolean  @default(false)
   water             Boolean  @default(false)
   security          Boolean  @default(false)
+  images            String[]
   roomType          RoomType
   distanceFromFUTA  Float?
   availableFrom     DateTime
