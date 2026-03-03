@@ -38,6 +38,8 @@ export async function GET(request: NextRequest) {
 					phone: true,
 					role: true,
 					verified: true,
+					landlordStatus: true,
+					idCardUrl: true,
 					createdAt: true,
 					updatedAt: true,
 					_count: {

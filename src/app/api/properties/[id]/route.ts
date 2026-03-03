@@ -93,7 +93,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 			);
 		}
 
-		const updateData: Record<string, unknown> = { ...parsed.data };
+		const updateData: Record<string, unknown> = {
+			...parsed.data,
+			status: "PENDING_APPROVAL",
+			approved: false,
+		};
 		if (parsed.data.availableFrom) {
 			updateData.availableFrom = new Date(parsed.data.availableFrom);
 		}

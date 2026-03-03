@@ -9,6 +9,14 @@ export const registerSchema = z.object({
 	phone: z.string().optional(),
 	password: z.string().min(6, "Password must be at least 6 characters"),
 	role: z.enum(["STUDENT", "LANDLORD"]).default("STUDENT"),
+	idCardUrl: z
+		.string()
+		.url("Valid ID card URL is required for landlords")
+		.optional(),
+});
+
+export const updateLandlordStatusSchema = z.object({
+	status: z.enum(["VERIFIED", "REJECTED", "SUSPENDED"]),
 });
 
 export const loginSchema = z.object({
@@ -59,6 +67,10 @@ export const createPropertySchema = z.object({
 	distanceFromFUTA: z.number().optional(),
 	availableFrom: z.string().datetime({ message: "Invalid date format" }),
 	landlordId: z.string().optional(),
+});
+
+export const updatePropertyStatusSchema = z.object({
+	status: z.enum(["APPROVED", "REJECTED", "ARCHIVED"]),
 });
 
 export const updatePropertySchema = createPropertySchema.partial();

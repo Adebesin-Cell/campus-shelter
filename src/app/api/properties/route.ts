@@ -1,6 +1,6 @@
 import type { NextRequest } from "next/server";
 import type { Prisma } from "@/generated/prisma/client";
-import { AuthError, requireAuth, requireRole } from "@/lib/auth";
+import { AuthError, getAuthUser, requireAuth, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
 	badRequest,
@@ -23,7 +23,25 @@ export async function GET(request: NextRequest) {
 		const { page, limit, skip } = getPagination(searchParams);
 
 		// Build dynamic where clause
-		const where: Prisma.PropertyWhereInput = { approved: true };
+		const landlordIdParam = searchParams.get("landlordId");
+		const authUser = getAuthUser(request);
+
+		const where: Prisma.PropertyWhereInput = {};
+
+		if (landlordIdParam) {
+			where.landlordId = landlordIdParam;
+			// Only show unapproved properties if requester is the landlord or an admin
+			if (
+				!(authUser?.role === "ADMIN" || authUser?.userId === landlordIdParam)
+			) {
+				where.OR = [{ approved: true }, { status: "APPROVED" }];
+			}
+		} else {
+			// standard browse - only show approved unless admin
+			if (authUser?.role !== "ADMIN") {
+				where.OR = [{ approved: true }, { status: "APPROVED" }];
+			}
+		}
 
 		const minPrice = searchParams.get("minPrice");
 		const maxPrice = searchParams.get("maxPrice");
@@ -113,6 +131,19 @@ export async function POST(request: NextRequest) {
 		const user = requireAuth(request);
 		requireRole(user, "LANDLORD", "ADMIN");
 
+		// If landlord, check if they are verified
+		if (user.role === "LANDLORD") {
+			const landlord = await prisma.user.findUnique({
+				where: { id: user.userId },
+				select: { landlordStatus: true },
+			});
+			if (landlord?.landlordStatus !== "VERIFIED") {
+				return forbidden(
+					"Your account must be verified before you can post properties",
+				);
+			}
+		}
+
 		const body = await request.json();
 		const parsed = createPropertySchema.safeParse(body);
 
@@ -134,6 +165,8 @@ export async function POST(request: NextRequest) {
 				...parsed.data,
 				availableFrom: new Date(parsed.data.availableFrom),
 				landlordId,
+				status: "PENDING_APPROVAL",
+				approved: false,
 			},
 			include: {
 				landlord: {
