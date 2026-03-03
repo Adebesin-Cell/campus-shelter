@@ -1,4 +1,6 @@
 import type { NextRequest } from "next/server";
+export const dynamic = "force-dynamic";
+
 import { AuthError, requireAuth, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { forbidden, serverError, success, unauthorized } from "@/lib/responses";
