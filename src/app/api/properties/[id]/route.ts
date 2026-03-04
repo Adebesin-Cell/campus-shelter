@@ -115,7 +115,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 		return success(property);
 	} catch (error) {
 		if (error instanceof AuthError) {
-			return error.message === "Forbidden" ? forbidden() : unauthorized();
+			return error.message === "Forbidden"
+				? forbidden("Only landlords can update their own properties")
+				: unauthorized("You must be logged in to update a property");
 		}
 		console.error("[Property PATCH Error]", error);
 		return serverError("Failed to update property");
@@ -146,7 +148,9 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 		return success({ message: "Property deleted successfully" });
 	} catch (error) {
 		if (error instanceof AuthError) {
-			return error.message === "Forbidden" ? forbidden() : unauthorized();
+			return error.message === "Forbidden"
+				? forbidden("Only landlords and admins can delete properties")
+				: unauthorized("You must be logged in to delete a property");
 		}
 		console.error("[Property DELETE Error]", error);
 		return serverError("Failed to delete property");

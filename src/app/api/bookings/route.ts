@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
 				? forbidden("Only students can create bookings")
-				: unauthorized();
+				: unauthorized("You must be logged in to create a booking");
 		}
 		console.error("[Bookings POST Error]", error);
 		return serverError("Failed to create booking");

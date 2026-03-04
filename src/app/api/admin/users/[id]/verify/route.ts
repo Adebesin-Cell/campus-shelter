@@ -1,7 +1,14 @@
 import type { NextRequest } from "next/server";
-import { requireAuth, requireRole } from "@/lib/auth";
+import { AuthError, requireAuth, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { badRequest, notFound, serverError, success } from "@/lib/responses";
+import {
+	badRequest,
+	forbidden,
+	notFound,
+	serverError,
+	success,
+	unauthorized,
+} from "@/lib/responses";
 import { updateLandlordStatusSchema } from "@/lib/validations";
 
 /**
@@ -34,7 +41,7 @@ export async function PATCH(
 		}
 
 		if (user.role !== "LANDLORD") {
-			return badRequest("Only landlords can be verified");
+			return badRequest("Only landlord accounts can be verified");
 		}
 
 		const updatedUser = await prisma.user.update({
@@ -55,9 +62,13 @@ export async function PATCH(
 		});
 
 		return success(updatedUser);
-	} catch (error: any) {
+	} catch (error) {
+		if (error instanceof AuthError) {
+			return error.message === "Forbidden"
+				? forbidden("Only admins can verify landlords")
+				: unauthorized("You must be logged in to perform this action");
+		}
 		console.error("[Admin Verify Landlord Error]", error);
-		if (error.name === "AuthError") return serverError(error.message);
-		return serverError("Failed to verify landlord");
+		return serverError("Failed to update landlord status");
 	}
 }

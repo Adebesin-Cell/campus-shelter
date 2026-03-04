@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
 				? forbidden("Only students can create maintenance requests")
-				: unauthorized();
+				: unauthorized("You must be logged in to submit a maintenance request");
 		}
 		console.error("[Maintenance POST Error]", error);
 		return serverError("Failed to create maintenance request");

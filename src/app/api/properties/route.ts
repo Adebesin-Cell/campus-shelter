@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
 				? forbidden("Only landlords and admins can create properties")
-				: unauthorized();
+				: unauthorized("You must be logged in to create a property");
 		}
 		console.error("[Properties POST Error]", error);
 		return serverError("Failed to create property");
