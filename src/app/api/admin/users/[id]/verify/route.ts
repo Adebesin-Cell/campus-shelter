@@ -10,13 +10,13 @@ import { updateLandlordStatusSchema } from "@/lib/validations";
  */
 export async function PATCH(
 	request: NextRequest,
-	{ params }: { params: { id: string } },
+	{ params }: { params: Promise<{ id: string }> },
 ) {
 	try {
 		const admin = requireAuth(request);
 		requireRole(admin, "ADMIN");
 
-		const { id } = params;
+		const { id } = await params;
 		const body = await request.json();
 		const parsed = updateLandlordStatusSchema.safeParse(body);
 
