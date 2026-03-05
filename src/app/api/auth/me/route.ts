@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
 				role: true,
 				verified: true,
 				landlordStatus: true,
+				suspensionReason: true,
 				idCardUrl: true,
 				createdAt: true,
 			},

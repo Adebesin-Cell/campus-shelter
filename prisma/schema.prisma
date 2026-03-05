@@ -50,17 +50,18 @@ enum MaintenanceStatus {
 // ─── User ─────────────────────────────────────────────────
 
 model User {
-  id             String          @id @default(cuid())
-  name           String
-  email          String          @unique
-  phone          String?
-  password       String
-  role           Role            @default(STUDENT)
-  landlordStatus LandlordStatus?
-  idCardUrl      String?
-  verified       Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id               String          @id @default(cuid())
+  name             String
+  email            String          @unique
+  phone            String?
+  password         String
+  role             Role            @default(STUDENT)
+  landlordStatus   LandlordStatus?
+  suspensionReason String?
+  idCardUrl        String?
+  verified         Boolean         @default(false)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   // Relations
   properties          Property[]
@@ -241,14 +242,16 @@ enum AppealStatus {
 }
 
 model Appeal {
-  id        String       @id @default(cuid())
-  userId    String
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reason    String
-  status    AppealStatus @default(PENDING)
-  adminNote String?
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reason      String
+  status      AppealStatus @default(PENDING)
+  adminNote   String?
+  processedBy String?
+  processedAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   @@map("appeals")
 }

@@ -17,6 +17,7 @@ export const registerSchema = z.object({
 
 export const updateLandlordStatusSchema = z.object({
 	status: z.enum(["VERIFIED", "REJECTED", "SUSPENDED"]),
+	suspensionReason: z.string().min(1).optional(),
 });
 
 export const loginSchema = z.object({

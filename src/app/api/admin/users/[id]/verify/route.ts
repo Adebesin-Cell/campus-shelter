@@ -48,8 +48,11 @@ export async function PATCH(
 			where: { id },
 			data: {
 				landlordStatus: parsed.data.status,
-				// Auto-set verified boolean if status is VERIFIED for backward compatibility
 				verified: parsed.data.status === "VERIFIED",
+				suspensionReason:
+					parsed.data.status === "SUSPENDED"
+						? parsed.data.suspensionReason || null
+						: null,
 			},
 			select: {
 				id: true,
@@ -58,6 +61,7 @@ export async function PATCH(
 				role: true,
 				landlordStatus: true,
 				verified: true,
+				suspensionReason: true,
 			},
 		});
 
