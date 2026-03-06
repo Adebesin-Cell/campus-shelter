@@ -38,12 +38,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 			prisma.review.count({ where: { propertyId: id } }),
 		]);
 
-		// Calculate average rating
-		const _avgResult = await prisma.review.aggregate({
-			where: { propertyId: id },
-			_avg: { rating: true },
-		});
-
 		return paginated(reviews, {
 			total,
 			page,

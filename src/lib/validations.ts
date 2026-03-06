@@ -11,7 +11,7 @@ export const registerSchema = z.object({
 	role: z.enum(["STUDENT", "LANDLORD"]).default("STUDENT"),
 	idCardUrl: z
 		.string()
-		.url("Valid ID card URL is required for landlords")
+		.min(1, "ID card URL is required for landlords")
 		.optional(),
 });
 
@@ -61,7 +61,7 @@ export const createPropertySchema = z.object({
 	water: z.boolean().default(false),
 	security: z.boolean().default(false),
 	images: z
-		.array(z.string().url("Each image must be a valid URL"))
+		.array(z.string().min(1, "Image path must not be empty"))
 		.optional()
 		.default([]),
 	roomType: z.enum(["SINGLE", "SELF_CON", "MINI_FLAT"]),

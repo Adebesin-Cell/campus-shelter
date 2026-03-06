@@ -35,6 +35,20 @@ export async function POST(request: NextRequest) {
 			return badRequest("File size must not exceed 10MB");
 		}
 
+		// Validate file type
+		const ALLOWED_TYPES = [
+			"image/jpeg",
+			"image/png",
+			"image/webp",
+			"image/avif",
+			"application/pdf",
+		];
+		if (!ALLOWED_TYPES.includes(file.type)) {
+			return badRequest(
+				"Invalid file type. Allowed: JPEG, PNG, WebP, AVIF, PDF",
+			);
+		}
+
 		// Create uploads directory if it doesn't exist
 		const uploadsDir = join(process.cwd(), "public", "uploads");
 		await mkdir(uploadsDir, { recursive: true });
@@ -66,7 +80,7 @@ export async function POST(request: NextRequest) {
 			},
 		});
 
-		return created(document);
+		return created({ ...document, url: fileUrl });
 	} catch (error) {
 		if (error instanceof AuthError) return unauthorized();
 		console.error("[Document Upload Error]", error);
