@@ -259,3 +259,13 @@ model Appeal {
 
   @@map("appeals")
 }
+
+// ─── App Settings ────────────────────────────────────────
+
+model AppSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@map("app_settings")
+}
