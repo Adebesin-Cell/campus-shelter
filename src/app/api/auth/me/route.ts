@@ -55,7 +55,11 @@ export async function PATCH(request: NextRequest) {
 	try {
 		const authUser = requireAuth(request);
 		const body = await request.json();
-		const { name, phone } = body as { name?: string; phone?: string };
+		const { name, phone, idCardUrl } = body as {
+			name?: string;
+			phone?: string;
+			idCardUrl?: string;
+		};
 
 		if (name !== undefined && name.trim().length < 2) {
 			return badRequest("Name must be at least 2 characters");
@@ -66,6 +70,7 @@ export async function PATCH(request: NextRequest) {
 			data: {
 				...(name !== undefined && { name: name.trim() }),
 				...(phone !== undefined && { phone: phone.trim() || null }),
+				...(idCardUrl !== undefined && { idCardUrl }),
 			},
 			select: {
 				id: true,

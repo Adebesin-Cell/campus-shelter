@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { z } from "zod";
 import { AuthError, requireAuth, requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -11,9 +12,13 @@ import {
 } from "@/lib/responses";
 import { updateLandlordStatusSchema } from "@/lib/validations";
 
+const verifyStudentSchema = z.object({
+	verified: z.boolean(),
+});
+
 /**
  * PATCH /api/admin/users/[id]/verify
- * Admin endpoint to verify/reject a landlord.
+ * Admin endpoint to verify/reject a landlord or verify a student.
  */
 export async function PATCH(
 	request: NextRequest,
@@ -25,14 +30,6 @@ export async function PATCH(
 
 		const { id } = await params;
 		const body = await request.json();
-		const parsed = updateLandlordStatusSchema.safeParse(body);
-
-		if (!parsed.success) {
-			return badRequest(
-				"Validation failed",
-				parsed.error.flatten().fieldErrors,
-			);
-		}
 
 		const user = await prisma.user.findUnique({ where: { id } });
 
@@ -40,8 +37,40 @@ export async function PATCH(
 			return notFound("User not found");
 		}
 
+		if (user.role === "STUDENT") {
+			const parsed = verifyStudentSchema.safeParse(body);
+			if (!parsed.success) {
+				return badRequest(
+					"Validation failed",
+					parsed.error.flatten().fieldErrors,
+				);
+			}
+			const updatedUser = await prisma.user.update({
+				where: { id },
+				data: { verified: parsed.data.verified },
+				select: {
+					id: true,
+					name: true,
+					email: true,
+					role: true,
+					verified: true,
+					idCardUrl: true,
+				},
+			});
+			return success(updatedUser);
+		}
+
 		if (user.role !== "LANDLORD") {
-			return badRequest("Only landlord accounts can be verified");
+			return badRequest("Only landlord or student accounts can be verified");
+		}
+
+		const parsed = updateLandlordStatusSchema.safeParse(body);
+
+		if (!parsed.success) {
+			return badRequest(
+				"Validation failed",
+				parsed.error.flatten().fieldErrors,
+			);
 		}
 
 		const updatedUser = await prisma.user.update({
@@ -69,10 +98,10 @@ export async function PATCH(
 	} catch (error) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
-				? forbidden("Only admins can verify landlords")
+				? forbidden("Only admins can verify users")
 				: unauthorized("You must be logged in to perform this action");
 		}
-		console.error("[Admin Verify Landlord Error]", error);
-		return serverError("Failed to update landlord status");
+		console.error("[Admin Verify User Error]", error);
+		return serverError("Failed to update user verification status");
 	}
 }
