@@ -158,6 +158,8 @@ model Booking {
   // Relations
   lease Lease?
 
+  @@index([studentId])
+  @@index([propertyId])
   @@map("bookings")
 }
 
@@ -201,6 +203,8 @@ model Message {
   content    String
   createdAt  DateTime @default(now())
 
+  @@index([senderId])
+  @@index([receiverId])
   @@map("messages")
 }
 

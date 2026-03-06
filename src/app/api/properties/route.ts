@@ -34,12 +34,12 @@ export async function GET(request: NextRequest) {
 			if (
 				!(authUser?.role === "ADMIN" || authUser?.userId === landlordIdParam)
 			) {
-				where.OR = [{ approved: true }, { status: "APPROVED" }];
+				where.status = "APPROVED";
 			}
 		} else {
 			// standard browse - only show approved unless admin
 			if (authUser?.role !== "ADMIN") {
-				where.OR = [{ approved: true }, { status: "APPROVED" }];
+				where.status = "APPROVED";
 			}
 		}
 

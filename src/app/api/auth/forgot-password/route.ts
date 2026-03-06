@@ -2,11 +2,29 @@ import type { NextRequest } from "next/server";
 import { generateResetToken } from "@/lib/auth";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { badRequest, serverError, success } from "@/lib/responses";
 import { forgotPasswordSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
 	try {
+		const ip = getClientIp(request);
+		const rl = checkRateLimit(`forgot:${ip}`, { max: 3, windowSec: 3600 });
+		if (!rl.allowed) {
+			return new Response(
+				JSON.stringify({
+					success: false,
+					message: "Too many password reset requests. Try again later.",
+				}),
+				{
+					status: 429,
+					headers: {
+						"Content-Type": "application/json",
+						"Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+					},
+				},
+			);
+		}
 		const body = await request.json();
 		const parsed = forgotPasswordSchema.safeParse(body);
 

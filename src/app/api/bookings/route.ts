@@ -96,11 +96,22 @@ export async function POST(request: NextRequest) {
 			return badRequest("Lease end date must be after start date");
 		}
 
-		// Verify property exists
+		// Verify property exists and is approved
 		const property = await prisma.property.findUnique({
 			where: { id: propertyId },
 		});
 		if (!property) return notFound("Property not found");
+
+		if (property.status !== "APPROVED") {
+			return badRequest("This property is not available for booking");
+		}
+
+		// Lease must not start before property availability date
+		if (startDate < property.availableFrom) {
+			return badRequest(
+				`Property is not available until ${property.availableFrom.toISOString().split("T")[0]}`,
+			);
+		}
 
 		// Check for overlapping bookings
 		const overlapping = await prisma.booking.findFirst({

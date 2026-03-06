@@ -1,11 +1,29 @@
 import type { NextRequest } from "next/server";
 import { hashPassword, signToken } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { badRequest, created, serverError } from "@/lib/responses";
 import { registerSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest) {
 	try {
+		const ip = getClientIp(request);
+		const rl = checkRateLimit(`register:${ip}`, { max: 5, windowSec: 3600 });
+		if (!rl.allowed) {
+			return new Response(
+				JSON.stringify({
+					success: false,
+					message: "Too many registration attempts. Try again later.",
+				}),
+				{
+					status: 429,
+					headers: {
+						"Content-Type": "application/json",
+						"Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+					},
+				},
+			);
+		}
 		const body = await request.json();
 		const parsed = registerSchema.safeParse(body);
 
