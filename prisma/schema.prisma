@@ -110,6 +110,7 @@ model Property {
   water             Boolean        @default(false)
   security          Boolean        @default(false)
   images            String[]
+  inspectionSlots   String[]
   roomType          RoomType
   distanceFromFUTA  Float?
   availableFrom     DateTime
