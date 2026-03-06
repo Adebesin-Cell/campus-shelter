@@ -73,6 +73,7 @@ model User {
   maintenanceRequests MaintenanceRequest[]
   passwordResets      PasswordReset[]
   appeals             Appeal[]
+  favorites           Favorite[]
 
   @@map("users")
 }
@@ -202,11 +203,25 @@ model Message {
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   propertyId String?
   content    String
+  read       Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   @@index([senderId])
   @@index([receiverId])
   @@map("messages")
+}
+
+// ─── Favorite ─────────────────────────────────────────────
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+  @@map("favorites")
 }
 
 // ─── Maintenance Request ──────────────────────────────────

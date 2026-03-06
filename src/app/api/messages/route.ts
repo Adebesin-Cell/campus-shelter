@@ -50,6 +50,14 @@ export async function GET(request: NextRequest) {
 			prisma.message.count({ where }),
 		]);
 
+		// Mark messages from the partner as read when viewing the conversation
+		if (partnerId) {
+			await prisma.message.updateMany({
+				where: { senderId: partnerId, receiverId: user.userId, read: false },
+				data: { read: true },
+			});
+		}
+
 		return paginated(messages, {
 			total,
 			page,
