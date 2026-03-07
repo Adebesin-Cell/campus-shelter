@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
 		const verification = await prisma.emailVerification.findUnique({
 			where: { token },
-			include: { user: { select: { id: true, emailVerified: true } } },
+			include: { user: { select: { id: true, emailVerifiedAt: true } } },
 		});
 
 		if (!verification) {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		if (verification.user.emailVerified) {
+		if (verification.user.emailVerifiedAt) {
 			// Already verified — clean up token and return success
 			await prisma.emailVerification.delete({
 				where: { id: verification.id },
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
 		await prisma.$transaction([
 			prisma.user.update({
 				where: { id: verification.userId },
-				data: { emailVerified: true },
+				data: { emailVerifiedAt: new Date() },
 			}),
 			prisma.emailVerification.deleteMany({
 				where: { userId: verification.userId },

@@ -41,14 +41,14 @@ export async function POST(request: NextRequest) {
 
 		const user = await prisma.user.findUnique({
 			where: { id: authUser.userId },
-			select: { id: true, name: true, email: true, emailVerified: true },
+			select: { id: true, name: true, email: true, emailVerifiedAt: true },
 		});
 
 		if (!user) {
 			return badRequest("User not found");
 		}
 
-		if (user.emailVerified) {
+		if (user.emailVerifiedAt) {
 			return badRequest("Email is already verified");
 		}
 

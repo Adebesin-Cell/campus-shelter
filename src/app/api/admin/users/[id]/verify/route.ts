@@ -13,7 +13,7 @@ import {
 import { updateLandlordStatusSchema } from "@/lib/validations";
 
 const verifyStudentSchema = z.object({
-	verified: z.boolean(),
+	verified: z.boolean(), // frontend sends boolean, we convert to DateTime
 });
 
 /**
@@ -47,13 +47,13 @@ export async function PATCH(
 			}
 			const updatedUser = await prisma.user.update({
 				where: { id },
-				data: { verified: parsed.data.verified },
+				data: { verifiedAt: parsed.data.verified ? new Date() : null },
 				select: {
 					id: true,
 					name: true,
 					email: true,
 					role: true,
-					verified: true,
+					verifiedAt: true,
 					idCardUrl: true,
 				},
 			});
@@ -77,7 +77,7 @@ export async function PATCH(
 			where: { id },
 			data: {
 				landlordStatus: parsed.data.status,
-				verified: parsed.data.status === "VERIFIED",
+				verifiedAt: parsed.data.status === "VERIFIED" ? new Date() : null,
 				suspensionReason:
 					parsed.data.status === "SUSPENDED"
 						? parsed.data.suspensionReason || null
@@ -89,7 +89,7 @@ export async function PATCH(
 				email: true,
 				role: true,
 				landlordStatus: true,
-				verified: true,
+				verifiedAt: true,
 				suspensionReason: true,
 			},
 		});

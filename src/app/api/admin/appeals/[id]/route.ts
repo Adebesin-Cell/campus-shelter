@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { AuthError, requireAuth, requireRole } from "@/lib/auth";
+import { sendAppealDecisionEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import {
 	badRequest,
@@ -10,7 +11,6 @@ import {
 	unauthorized,
 } from "@/lib/responses";
 import { sanitizeText } from "@/lib/sanitize";
-import { sendAppealDecisionEmail } from "@/lib/email";
 
 /**
  * PATCH /api/admin/appeals/[id]
@@ -66,7 +66,7 @@ export async function PATCH(
 					where: { id: appeal.userId },
 					data: {
 						landlordStatus: "VERIFIED",
-						verified: true,
+						verifiedAt: new Date(),
 						suspensionReason: null,
 					},
 				});
@@ -81,9 +81,7 @@ export async function PATCH(
 			appeal.user.name,
 			status as "APPROVED" | "REJECTED",
 			adminNote || undefined,
-		).catch((err) =>
-			console.error("[Appeal Email Error]", err),
-		);
+		).catch((err) => console.error("[Appeal Email Error]", err));
 
 		return success(updatedAppeal);
 	} catch (error) {

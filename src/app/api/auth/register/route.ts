@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
 				phone: true,
 				role: true,
 				landlordStatus: true,
-				verified: true,
-				emailVerified: true,
+				verifiedAt: true,
+				emailVerifiedAt: true,
 				createdAt: true,
 			},
 		});

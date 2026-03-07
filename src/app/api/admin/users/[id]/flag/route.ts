@@ -12,7 +12,7 @@ import {
 } from "@/lib/responses";
 
 const flagSchema = z.object({
-	flagged: z.boolean(),
+	flagged: z.boolean(), // frontend sends boolean, we convert to DateTime
 });
 
 /**
@@ -45,13 +45,13 @@ export async function PATCH(
 
 		const updatedUser = await prisma.user.update({
 			where: { id },
-			data: { flagged: parsed.data.flagged },
+			data: { flaggedAt: parsed.data.flagged ? new Date() : null },
 			select: {
 				id: true,
 				name: true,
 				email: true,
 				role: true,
-				flagged: true,
+				flaggedAt: true,
 			},
 		});
 
