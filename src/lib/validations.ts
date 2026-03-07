@@ -46,7 +46,7 @@ export const changePasswordSchema = z.object({
 });
 
 export const createPropertySchema = z.object({
-	title: z.string().min(3, "Title must be at least 3 characters"),
+	title: z.string().min(10, "Title must be at least 10 characters"),
 	description: z.string().min(10, "Description must be at least 10 characters"),
 	priceMonthly: z.number().positive("Monthly price must be positive"),
 	priceWeekly: z.number().positive("Weekly price must be positive").optional(),
