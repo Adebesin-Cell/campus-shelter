@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import { env } from "@/lib/env";
 
+export function getVerifyEmailUrl(token: string): string {
+	return `${env.FRONTEND_URL}/verify-email?token=${token}`;
+}
+
 const transporter = nodemailer.createTransport({
 	service: "gmail",
 	auth:
@@ -27,6 +31,35 @@ export async function sendPasswordResetEmail(
 				</div>
 				<p style="margin-top: 16px; color: #666;">This token expires in 1 hour.</p>
 				<p style="color: #666;">If you did not request this, you can safely ignore this email.</p>
+			</div>
+		`,
+	});
+}
+
+export async function sendVerificationEmail(
+	to: string,
+	name: string,
+	token: string,
+): Promise<void> {
+	const verifyUrl = getVerifyEmailUrl(token);
+	await transporter.sendMail({
+		from: env.SMTP_FROM,
+		to,
+		subject: "Campus Shelter — Verify Your Email",
+		html: `
+			<div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+				<h2>Welcome to Campus Shelter!</h2>
+				<p>Hi ${name},</p>
+				<p>Thanks for signing up. Please verify your email address to get started.</p>
+				<div style="text-align: center; margin: 24px 0;">
+					<a href="${verifyUrl}" style="display: inline-block; background: #6366f1; color: #fff; padding: 12px 32px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+						Verify Email
+					</a>
+				</div>
+				<p style="color: #666; font-size: 13px;">Or copy and paste this link into your browser:</p>
+				<p style="word-break: break-all; font-size: 13px; color: #6366f1;">${verifyUrl}</p>
+				<p style="margin-top: 16px; color: #666;">This link expires in 24 hours.</p>
+				<p style="color: #666;">If you did not create an account, you can safely ignore this email.</p>
 			</div>
 		`,
 	});

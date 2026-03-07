@@ -18,6 +18,7 @@ export const env = createEnv({
 		SMTP_USER: z.string().optional(),
 		SMTP_PASS: z.string().optional(),
 		SMTP_FROM: z.string().optional().default("noreply@campusshelter.com"),
+		FRONTEND_URL: z.string().url().optional().default("http://localhost:5173"),
 	},
 
 	/**
@@ -42,6 +43,7 @@ export const env = createEnv({
 		SMTP_USER: process.env.SMTP_USER,
 		SMTP_PASS: process.env.SMTP_PASS,
 		SMTP_FROM: process.env.SMTP_FROM,
+		FRONTEND_URL: process.env.FRONTEND_URL,
 	},
 
 	/**

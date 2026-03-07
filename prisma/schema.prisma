@@ -60,20 +60,22 @@ model User {
   suspensionReason String?
   idCardUrl        String?
   verified         Boolean         @default(false)
+  emailVerified    Boolean         @default(false)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
   // Relations
-  properties          Property[]
-  bookings            Booking[]
-  reviews             Review[]
-  sentMessages        Message[]            @relation("SentMessages")
-  receivedMessages    Message[]            @relation("ReceivedMessages")
-  documents           Document[]
-  maintenanceRequests MaintenanceRequest[]
-  passwordResets      PasswordReset[]
-  appeals             Appeal[]
-  favorites           Favorite[]
+  properties           Property[]
+  bookings             Booking[]
+  reviews              Review[]
+  sentMessages         Message[]            @relation("SentMessages")
+  receivedMessages     Message[]            @relation("ReceivedMessages")
+  documents            Document[]
+  maintenanceRequests  MaintenanceRequest[]
+  passwordResets       PasswordReset[]
+  appeals              Appeal[]
+  favorites            Favorite[]
+  emailVerifications   EmailVerification[]
 
   @@map("users")
 }
@@ -90,6 +92,19 @@ model PasswordReset {
   createdAt DateTime @default(now())
 
   @@map("password_resets")
+}
+
+// ─── Email Verification ─────────────────────────────────
+
+model EmailVerification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("email_verifications")
 }
 
 // ─── Property ─────────────────────────────────────────────

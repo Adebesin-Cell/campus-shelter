@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
-import { hashPassword, signToken } from "@/lib/auth";
+import { generateResetToken, hashPassword, signToken } from "@/lib/auth";
+import { sendVerificationEmail } from "@/lib/email";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { badRequest, created, serverError } from "@/lib/responses";
@@ -62,8 +63,24 @@ export async function POST(request: NextRequest) {
 				role: true,
 				landlordStatus: true,
 				verified: true,
+				emailVerified: true,
 				createdAt: true,
 			},
+		});
+
+		// Create email verification token (24h expiry)
+		const verifyToken = generateResetToken();
+		await prisma.emailVerification.create({
+			data: {
+				userId: user.id,
+				token: verifyToken,
+				expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+			},
+		});
+
+		// Send verification email (fire and forget)
+		sendVerificationEmail(email, name, verifyToken).catch((err) => {
+			console.error("[Registration Verification Email Error]", err);
 		});
 
 		// Generate JWT
