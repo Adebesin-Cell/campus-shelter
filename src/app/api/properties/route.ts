@@ -51,6 +51,15 @@ export async function GET(request: NextRequest) {
 			if (maxPrice) where.priceMonthly.lte = parseFloat(maxPrice);
 		}
 
+		const search = searchParams.get("search");
+		if (search) {
+			where.OR = [
+				{ title: { contains: search, mode: "insensitive" } },
+				{ location: { contains: search, mode: "insensitive" } },
+				{ description: { contains: search, mode: "insensitive" } },
+			];
+		}
+
 		const location = searchParams.get("location");
 		if (location) {
 			where.location = { contains: location, mode: "insensitive" };
