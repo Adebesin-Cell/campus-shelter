@@ -68,6 +68,11 @@ export const createPropertySchema = z.object({
 	distanceFromFUTA: z.number().optional(),
 	availableFrom: z.string().datetime({ message: "Invalid date format" }),
 	landlordId: z.string().optional(),
+	notes: z
+		.string()
+		.max(2000, "Notes must be under 2000 characters")
+		.optional()
+		.nullable(),
 });
 
 export const updatePropertyStatusSchema = z.object({

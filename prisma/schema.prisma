@@ -125,6 +125,7 @@ model Property {
   electricityBackup Boolean        @default(false)
   water             Boolean        @default(false)
   security          Boolean        @default(false)
+  notes             String?
   images            String[]
   inspectionSlots   String[]
   roomType          RoomType
