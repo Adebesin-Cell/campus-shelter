@@ -32,6 +32,7 @@ export async function GET(
 				phone: true,
 				role: true,
 				verified: true,
+				flagged: true,
 				landlordStatus: true,
 				suspensionReason: true,
 				idCardUrl: true,
