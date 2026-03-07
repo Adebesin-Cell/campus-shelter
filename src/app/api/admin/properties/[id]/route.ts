@@ -37,7 +37,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
 		const updated = await prisma.property.update({
 			where: { id },
-			data: { approved },
+			data: {
+				approved,
+				status: approved ? "APPROVED" : "REJECTED",
+			},
 			include: {
 				landlord: {
 					select: { id: true, name: true, email: true },

@@ -47,8 +47,16 @@ export async function GET(request: NextRequest) {
 		const maxPrice = searchParams.get("maxPrice");
 		if (minPrice || maxPrice) {
 			where.priceMonthly = {};
-			if (minPrice) where.priceMonthly.gte = parseFloat(minPrice);
-			if (maxPrice) where.priceMonthly.lte = parseFloat(maxPrice);
+			const minP = minPrice ? parseFloat(minPrice) : null;
+			const maxP = maxPrice ? parseFloat(maxPrice) : null;
+			if (
+				(minP !== null && Number.isNaN(minP)) ||
+				(maxP !== null && Number.isNaN(maxP))
+			) {
+				return badRequest("Invalid price filter value");
+			}
+			if (minP !== null) where.priceMonthly.gte = minP;
+			if (maxP !== null) where.priceMonthly.lte = maxP;
 		}
 
 		const search = searchParams.get("search");
@@ -78,12 +86,24 @@ export async function GET(request: NextRequest) {
 
 		const distanceFromFUTA = searchParams.get("distanceFromFUTA");
 		if (distanceFromFUTA) {
-			where.distanceFromFUTA = { lte: parseFloat(distanceFromFUTA) };
+			const dist = parseFloat(distanceFromFUTA);
+			if (Number.isNaN(dist)) {
+				return badRequest("Invalid distanceFromFUTA value");
+			}
+			where.distanceFromFUTA = { lte: dist };
 		}
 
 		const minRating = searchParams.get("minRating");
+		const minRatingValue = minRating ? parseFloat(minRating) : null;
 
-		// Query with pagination
+		if (minRatingValue !== null && Number.isNaN(minRatingValue)) {
+			return badRequest("Invalid minRating value");
+		}
+
+		// When filtering by minRating, we need to fetch all matching properties
+		// first, then paginate in JS, because avg rating is computed from reviews.
+		const useJsPagination = minRatingValue !== null;
+
 		const [properties, total] = await Promise.all([
 			prisma.property.findMany({
 				where,
@@ -95,13 +115,12 @@ export async function GET(request: NextRequest) {
 					_count: { select: { bookings: true, reviews: true } },
 				},
 				orderBy: { createdAt: "desc" },
-				skip,
-				take: limit,
+				...(useJsPagination ? {} : { skip, take: limit }),
 			}),
-			prisma.property.count({ where }),
+			useJsPagination ? Promise.resolve(0) : prisma.property.count({ where }),
 		]);
 
-		// Calculate average ratings and apply minRating filter
+		// Calculate average ratings
 		type PropertyWithReviews = (typeof properties)[number];
 		let result = properties.map((property: PropertyWithReviews) => {
 			const { reviews, ...rest } = property;
@@ -115,15 +134,20 @@ export async function GET(request: NextRequest) {
 			return { ...rest, avgRating: Math.round(avgRating * 10) / 10 };
 		});
 
-		if (minRating) {
-			result = result.filter((p) => p.avgRating >= parseFloat(minRating));
+		if (minRatingValue !== null) {
+			result = result.filter((p) => p.avgRating >= minRatingValue);
+		}
+
+		const finalTotal = useJsPagination ? result.length : total;
+		if (useJsPagination) {
+			result = result.slice(skip, skip + limit);
 		}
 
 		return paginated(result, {
-			total,
+			total: finalTotal,
 			page,
 			limit,
-			totalPages: Math.ceil(total / limit),
+			totalPages: Math.ceil(finalTotal / limit),
 		});
 	} catch (error) {
 		console.error("[Properties GET Error]", error);

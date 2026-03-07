@@ -54,20 +54,33 @@ export async function POST(request: NextRequest) {
 			return badRequest("Lease already exists for this booking");
 		}
 
-		const lease = await prisma.lease.create({
-			data: {
-				bookingId,
-				documentUrl,
-			},
-			include: {
-				booking: {
-					include: {
-						student: { select: { id: true, name: true, email: true } },
-						property: { select: { id: true, title: true } },
+		// Use transaction to prevent duplicate lease creation
+		const lease = await prisma.$transaction(async (tx) => {
+			// Re-check inside transaction to prevent race condition
+			const existingLease = await tx.lease.findUnique({
+				where: { bookingId },
+			});
+			if (existingLease) return null;
+
+			return tx.lease.create({
+				data: {
+					bookingId,
+					documentUrl,
+				},
+				include: {
+					booking: {
+						include: {
+							student: { select: { id: true, name: true, email: true } },
+							property: { select: { id: true, title: true } },
+						},
 					},
 				},
-			},
+			});
 		});
+
+		if (!lease) {
+			return badRequest("Lease already exists for this booking");
+		}
 
 		return created(lease);
 	} catch (error) {

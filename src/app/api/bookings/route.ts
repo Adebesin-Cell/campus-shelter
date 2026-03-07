@@ -113,36 +113,42 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Check for overlapping bookings
-		const overlapping = await prisma.booking.findFirst({
-			where: {
-				propertyId,
-				status: { in: ["PENDING", "APPROVED"] },
-				leaseStart: { lt: endDate },
-				leaseEnd: { gt: startDate },
-			},
+		// Check for overlapping bookings and create atomically
+		const booking = await prisma.$transaction(async (tx) => {
+			const overlapping = await tx.booking.findFirst({
+				where: {
+					propertyId,
+					status: { in: ["PENDING", "APPROVED"] },
+					leaseStart: { lt: endDate },
+					leaseEnd: { gt: startDate },
+				},
+			});
+
+			if (overlapping) {
+				return null;
+			}
+
+			return tx.booking.create({
+				data: {
+					studentId: user.userId,
+					propertyId,
+					leaseStart: startDate,
+					leaseEnd: endDate,
+				},
+				include: {
+					student: {
+						select: { id: true, name: true, email: true },
+					},
+					property: {
+						select: { id: true, title: true, location: true },
+					},
+				},
+			});
 		});
 
-		if (overlapping) {
+		if (!booking) {
 			return badRequest("Property is already booked for the selected dates");
 		}
-
-		const booking = await prisma.booking.create({
-			data: {
-				studentId: user.userId,
-				propertyId,
-				leaseStart: startDate,
-				leaseEnd: endDate,
-			},
-			include: {
-				student: {
-					select: { id: true, name: true, email: true },
-				},
-				property: {
-					select: { id: true, title: true, location: true },
-				},
-			},
-		});
 
 		return created(booking);
 	} catch (error) {
