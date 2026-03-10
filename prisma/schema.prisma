@@ -39,6 +39,14 @@ enum BookingStatus {
   PENDING
   APPROVED
   REJECTED
+  EVICTED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PENDING_PAYMENT
+  PAID
+  REFUNDED
 }
 
 enum MaintenanceStatus {
@@ -77,6 +85,7 @@ model User {
   appeals              Appeal[]
   favorites            Favorite[]
   emailVerifications   EmailVerification[]
+  bankDetail           LandlordBankDetail?
 
   @@map("users")
 }
@@ -134,6 +143,7 @@ model Property {
   availableFrom     DateTime
   status            PropertyStatus @default(PENDING_APPROVAL)
   approved          Boolean        @default(false)
+  rejectionNote     String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -164,18 +174,22 @@ model Availability {
 // ─── Booking ──────────────────────────────────────────────
 
 model Booking {
-  id         String        @id @default(cuid())
-  studentId  String
-  student    User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  propertyId String
-  property   Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  status     BookingStatus @default(PENDING)
-  leaseStart DateTime
-  leaseEnd   DateTime
-  createdAt  DateTime      @default(now())
+  id              String        @id @default(cuid())
+  studentId       String
+  student         User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  propertyId      String
+  property        Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  status          BookingStatus @default(PENDING)
+  paymentStatus   PaymentStatus @default(UNPAID)
+  leaseStart      DateTime
+  leaseEnd        DateTime
+  evictionReason  String?
+  evictionDate    DateTime?
+  createdAt       DateTime      @default(now())
 
   // Relations
-  lease Lease?
+  lease   Lease?
+  payment Payment?
 
   @@index([studentId])
   @@index([propertyId])
@@ -185,11 +199,14 @@ model Booking {
 // ─── Lease ────────────────────────────────────────────────
 
 model Lease {
-  id          String   @id @default(cuid())
-  bookingId   String   @unique
-  booking     Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  documentUrl String
-  signedAt    DateTime @default(now())
+  id              String   @id @default(cuid())
+  bookingId       String   @unique
+  booking         Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  documentUrl     String
+  gracePeriodDays Int      @default(0)
+  terms           String?
+  duration        String?
+  signedAt        DateTime @default(now())
 
   @@map("leases")
 }
@@ -221,6 +238,8 @@ model Message {
   propertyId String?
   content    String
   read       Boolean  @default(false)
+  flaggedAt  DateTime?
+  flagReason String?
   createdAt  DateTime @default(now())
 
   @@index([senderId])
@@ -291,6 +310,45 @@ model Appeal {
   updatedAt   DateTime     @updatedAt
 
   @@map("appeals")
+}
+
+// ─── Payment ────────────────────────────────────────────
+
+model Payment {
+  id                String    @id @default(cuid())
+  bookingId         String    @unique
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount            Float
+  platformFee       Float
+  landlordAmount    Float
+  currency          String    @default("NGN")
+  paystackReference String    @unique
+  paystackStatus    String?
+  paidAt            DateTime?
+  refundedAt        DateTime?
+  refundReason      String?
+  refundedBy        String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("payments")
+}
+
+// ─── Landlord Bank Detail ───────────────────────────────
+
+model LandlordBankDetail {
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bankCode               String
+  bankName               String
+  accountNumber          String
+  accountName            String
+  paystackSubaccountCode String?  @unique
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("landlord_bank_details")
 }
 
 // ─── App Settings ────────────────────────────────────────

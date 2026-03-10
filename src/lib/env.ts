@@ -19,6 +19,9 @@ export const env = createEnv({
 		SMTP_PASS: z.string().optional(),
 		SMTP_FROM: z.string().optional().default("noreply@campusshelter.com"),
 		FRONTEND_URL: z.string().url().optional().default("http://localhost:5173"),
+		PAYSTACK_SECRET_KEY: z.string().min(10).optional(),
+		PAYSTACK_PUBLIC_KEY: z.string().min(10).optional(),
+		PLATFORM_COMMISSION_PERCENT: z.coerce.number().min(0).max(100).default(5),
 	},
 
 	/**
@@ -44,6 +47,9 @@ export const env = createEnv({
 		SMTP_PASS: process.env.SMTP_PASS,
 		SMTP_FROM: process.env.SMTP_FROM,
 		FRONTEND_URL: process.env.FRONTEND_URL,
+		PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY,
+		PAYSTACK_PUBLIC_KEY: process.env.PAYSTACK_PUBLIC_KEY,
+		PLATFORM_COMMISSION_PERCENT: process.env.PLATFORM_COMMISSION_PERCENT,
 	},
 
 	/**

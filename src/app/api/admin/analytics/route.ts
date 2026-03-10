@@ -24,6 +24,8 @@ export async function GET(request: NextRequest) {
 			topPropertiesByRating,
 			recentBookings,
 			revenueEstimate,
+			flaggedMessages,
+			paymentStats,
 		] = await Promise.all([
 			prisma.user.count(),
 			prisma.property.count(),
@@ -75,6 +77,17 @@ export async function GET(request: NextRequest) {
 				where: { status: "APPROVED" },
 				include: { property: { select: { priceMonthly: true } } },
 			}),
+
+			prisma.message.count({
+				where: { flaggedAt: { not: null } },
+			}),
+
+			// Payment statistics
+			prisma.payment.aggregate({
+				where: { paystackStatus: "success" },
+				_sum: { amount: true, platformFee: true, landlordAmount: true },
+				_count: { _all: true },
+			}),
 		]);
 
 		// Process top properties by rating
@@ -110,6 +123,16 @@ export async function GET(request: NextRequest) {
 				totalBookings,
 				recentBookings,
 				totalRevenue: Math.round(totalRevenue * 100) / 100,
+				flaggedMessages,
+				paymentStats: {
+					totalCollected:
+						Math.round((paymentStats._sum.amount || 0) * 100) / 100,
+					totalCommission:
+						Math.round((paymentStats._sum.platformFee || 0) * 100) / 100,
+					totalPayouts:
+						Math.round((paymentStats._sum.landlordAmount || 0) * 100) / 100,
+					totalPayments: paymentStats._count._all,
+				},
 			},
 			bookingsByStatus: bookingsByStatus.map(
 				(b: (typeof bookingsByStatus)[number]) => ({

@@ -97,6 +97,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 			...parsed.data,
 			status: "PENDING_APPROVAL",
 			approved: false,
+			rejectionNote: null,
 		};
 		if (parsed.data.availableFrom) {
 			updateData.availableFrom = new Date(parsed.data.availableFrom);
