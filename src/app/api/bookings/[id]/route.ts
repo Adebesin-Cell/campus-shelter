@@ -17,16 +17,73 @@ interface RouteParams {
 
 /**
  * PATCH /api/bookings/[id]
- * Approve or reject a booking (Landlord only).
+ * - Approve or reject a booking (Landlord only).
+ * - Cancel a booking (Student who owns the booking only; PENDING bookings only).
  */
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	try {
 		const user = requireAuth(request);
-		requireRole(user, "LANDLORD");
 
 		const { id } = await params;
 
 		const body = await request.json();
+
+		// Student cancellation path
+		if (user.role === "STUDENT") {
+			if (body.status !== "CANCELLED") {
+				return forbidden("Students can only cancel their own bookings");
+			}
+
+			const booking = await prisma.booking.findUnique({
+				where: { id },
+				select: {
+					id: true,
+					studentId: true,
+					status: true,
+					roomId: true,
+				},
+			});
+
+			if (!booking) return notFound("Booking not found");
+
+			if (booking.studentId !== user.userId) {
+				return forbidden("You can only cancel your own bookings");
+			}
+
+			if (booking.status !== "PENDING") {
+				return badRequest("Only PENDING bookings can be cancelled");
+			}
+
+			const updated = await prisma.$transaction(async (tx) => {
+				if (booking.roomId) {
+					await tx.room.update({
+						where: { id: booking.roomId },
+						data: { isAvailable: true },
+					});
+				}
+
+				return tx.booking.update({
+					where: { id },
+					data: { status: "CANCELLED" },
+					include: {
+						student: {
+							select: { id: true, name: true, email: true },
+						},
+						property: {
+							select: { id: true, title: true, location: true },
+						},
+						room: true,
+						payment: true,
+					},
+				});
+			});
+
+			return success(updated);
+		}
+
+		// Landlord path — approve or reject
+		requireRole(user, "LANDLORD");
+
 		const parsed = updateBookingStatusSchema.safeParse(body);
 
 		if (!parsed.success) {
@@ -83,7 +140,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 	} catch (error) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"
-				? forbidden("Only landlords can manage bookings")
+				? forbidden("You do not have permission to perform this action")
 				: unauthorized();
 		}
 		console.error("[Booking PATCH Error]", error);
