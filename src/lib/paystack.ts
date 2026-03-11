@@ -129,6 +129,30 @@ export async function initializeTransaction(data: {
 	};
 }
 
+export async function initializeWalletTransaction(data: {
+	email: string;
+	amount: number; // in kobo
+	reference: string;
+	callbackUrl: string;
+}): Promise<{ authorizationUrl: string; reference: string }> {
+	const res = await paystackFetch<TransactionInitResponse>(
+		"/transaction/initialize",
+		{
+			method: "POST",
+			body: JSON.stringify({
+				email: data.email,
+				amount: data.amount,
+				reference: data.reference,
+				callback_url: data.callbackUrl,
+			}),
+		},
+	);
+	return {
+		authorizationUrl: res.data.authorization_url,
+		reference: res.data.reference,
+	};
+}
+
 export async function verifyTransaction(
 	reference: string,
 ): Promise<TransactionVerifyResponse["data"]> {

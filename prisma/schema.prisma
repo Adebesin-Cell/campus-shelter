@@ -86,6 +86,7 @@ model User {
   favorites            Favorite[]
   emailVerifications   EmailVerification[]
   bankDetail           LandlordBankDetail?
+  wallet               Wallet?
 
   @@map("users")
 }
@@ -350,6 +351,44 @@ model LandlordBankDetail {
   updatedAt              DateTime @updatedAt
 
   @@map("landlord_bank_details")
+}
+
+// ─── Wallet ─────────────────────────────────────────────
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+enum WalletTransactionType {
+  FUND
+  RENT_PAYMENT
+  REFUND
+}
+
+model WalletTransaction {
+  id                String                @id @default(cuid())
+  walletId          String
+  wallet            Wallet                @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  type              WalletTransactionType
+  amount            Float
+  balanceBefore     Float
+  balanceAfter      Float
+  description       String
+  bookingId         String?
+  paystackReference String?               @unique
+  createdAt         DateTime              @default(now())
+
+  @@index([walletId])
+  @@map("wallet_transactions")
 }
 
 // ─── App Settings ────────────────────────────────────────
