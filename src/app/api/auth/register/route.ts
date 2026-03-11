@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 				password: hashedPassword,
 				role,
 				landlordStatus: role === "LANDLORD" ? "PENDING" : null,
-				idCardUrl: role === "LANDLORD" ? parsed.data.idCardUrl : null,
+				idCardUrl: parsed.data.idCardUrl ?? null,
 			},
 			select: {
 				id: true,

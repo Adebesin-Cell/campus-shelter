@@ -1,5 +1,9 @@
 import type { NextRequest } from "next/server";
 import { AuthError, requireAuth } from "@/lib/auth";
+import {
+	detectAccountNumber,
+	FLAG_REASON_ACCOUNT_NUMBER,
+} from "@/lib/message-flags";
 import { prisma } from "@/lib/prisma";
 import {
 	badRequest,
@@ -102,12 +106,18 @@ export async function POST(request: NextRequest) {
 		});
 		if (!receiver) return notFound("Receiver not found");
 
+		const isFlagged = detectAccountNumber(content);
+
 		const message = await prisma.message.create({
 			data: {
 				senderId: user.userId,
 				receiverId,
 				propertyId: propertyId || null,
 				content,
+				...(isFlagged && {
+					flaggedAt: new Date(),
+					flagReason: FLAG_REASON_ACCOUNT_NUMBER,
+				}),
 			},
 			include: {
 				sender: { select: { id: true, name: true } },

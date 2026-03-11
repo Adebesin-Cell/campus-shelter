@@ -9,10 +9,7 @@ export const registerSchema = z.object({
 	phone: z.string().optional(),
 	password: z.string().min(6, "Password must be at least 6 characters"),
 	role: z.enum(["STUDENT", "LANDLORD"]).default("STUDENT"),
-	idCardUrl: z
-		.string()
-		.min(1, "ID card URL is required for landlords")
-		.optional(),
+	idCardUrl: z.string().min(1).optional(),
 });
 
 export const updateLandlordStatusSchema = z.object({
@@ -75,9 +72,15 @@ export const createPropertySchema = z.object({
 		.nullable(),
 });
 
-export const updatePropertyStatusSchema = z.object({
-	status: z.enum(["APPROVED", "REJECTED", "ARCHIVED"]),
-});
+export const updatePropertyStatusSchema = z
+	.object({
+		status: z.enum(["APPROVED", "REJECTED", "ARCHIVED"]),
+		rejectionNote: z.string().min(1).max(2000).optional(),
+	})
+	.refine(
+		(data) => data.status !== "REJECTED" || !!data.rejectionNote?.trim(),
+		{ message: "A rejection reason is required", path: ["rejectionNote"] },
+	);
 
 export const updatePropertySchema = createPropertySchema.partial();
 
@@ -94,6 +97,20 @@ export const updateBookingStatusSchema = z.object({
 export const createLeaseSchema = z.object({
 	bookingId: z.string().min(1, "Booking ID is required"),
 	documentUrl: z.string().url("Invalid document URL"),
+	gracePeriodDays: z.number().int().min(0).max(365).default(0),
+	terms: z.string().max(5000, "Terms must be under 5000 characters").optional(),
+	duration: z.string().max(100).optional(),
+});
+
+export const updateLeaseSchema = z.object({
+	gracePeriodDays: z.number().int().min(0).max(365).optional(),
+	terms: z.string().max(5000, "Terms must be under 5000 characters").optional(),
+	duration: z.string().max(100).optional(),
+	documentUrl: z.string().url("Invalid document URL").optional(),
+});
+
+export const evictBookingSchema = z.object({
+	reason: z.string().min(10, "Eviction reason must be at least 10 characters"),
 });
 
 export const createReviewSchema = z.object({

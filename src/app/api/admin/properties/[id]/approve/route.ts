@@ -44,8 +44,14 @@ export async function PATCH(
 			where: { id },
 			data: {
 				status: parsed.data.status,
-				// Auto-set approved boolean if status is APPROVED for backward compatibility
 				approved: parsed.data.status === "APPROVED",
+				rejectionNote:
+					parsed.data.status === "REJECTED" ? parsed.data.rejectionNote! : null,
+			},
+			include: {
+				landlord: {
+					select: { id: true, name: true, email: true, phone: true },
+				},
 			},
 		});
 
