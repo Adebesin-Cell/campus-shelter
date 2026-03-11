@@ -59,10 +59,6 @@ export async function POST(request: NextRequest) {
 			return badRequest("Booking must be approved before payment");
 		}
 
-		if (booking.paymentStatus !== "UNPAID") {
-			return badRequest("Payment has already been initiated for this booking");
-		}
-
 		// Fetch landlord bank details for subaccount
 		const bankDetail = await prisma.landlordBankDetail.findUnique({
 			where: { userId: booking.property.landlordId },
@@ -97,8 +93,18 @@ export async function POST(request: NextRequest) {
 			callbackUrl: `${env.FRONTEND_URL}/payments/verify`,
 		});
 
-		// Create payment record and update booking in a transaction
-		await prisma.$transaction(async (tx) => {
+		// Create payment record and update booking atomically with UNPAID check
+		const result = await prisma.$transaction(async (tx) => {
+			// Re-check payment status inside transaction to prevent race conditions
+			const freshBooking = await tx.booking.findUniqueOrThrow({
+				where: { id: bookingId },
+				select: { paymentStatus: true },
+			});
+
+			if (freshBooking.paymentStatus !== "UNPAID") {
+				return null;
+			}
+
 			await tx.payment.create({
 				data: {
 					bookingId,
@@ -114,10 +120,14 @@ export async function POST(request: NextRequest) {
 				data: { paymentStatus: "PENDING_PAYMENT" },
 			});
 
-			return;
+			return { authorizationUrl, reference };
 		});
 
-		return success({ authorizationUrl, reference });
+		if (!result) {
+			return badRequest("Payment has already been initiated for this booking");
+		}
+
+		return success(result);
 	} catch (error) {
 		if (error instanceof AuthError) {
 			return error.message === "Forbidden"

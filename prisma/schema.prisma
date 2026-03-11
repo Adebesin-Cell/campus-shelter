@@ -207,6 +207,7 @@ model Lease {
   terms           String?
   duration        String?
   signedAt        DateTime @default(now())
+  terminatedAt    DateTime?
 
   @@map("leases")
 }

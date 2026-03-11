@@ -53,6 +53,7 @@ export async function GET(request: NextRequest) {
 						},
 					},
 					lease: true,
+					payment: true,
 				},
 				orderBy: { createdAt: "desc" },
 				skip,
