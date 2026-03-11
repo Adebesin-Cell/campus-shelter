@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
 							title: true,
 							location: true,
 							priceMonthly: true,
+							images: true,
 						},
 					},
 					room: true,
