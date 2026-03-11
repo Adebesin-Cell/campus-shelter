@@ -29,7 +29,8 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { bookingId, documentUrl } = parsed.data;
+		const { bookingId, documentUrl, gracePeriodDays, terms, duration } =
+			parsed.data;
 
 		// Verify booking exists and is approved
 		const booking = await prisma.booking.findUnique({
@@ -66,6 +67,9 @@ export async function POST(request: NextRequest) {
 				data: {
 					bookingId,
 					documentUrl,
+					gracePeriodDays,
+					terms,
+					duration,
 				},
 				include: {
 					booking: {

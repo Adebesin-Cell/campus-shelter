@@ -24,12 +24,18 @@ export async function GET(request: NextRequest) {
 		const { searchParams } = request.nextUrl;
 		const { page, limit, skip } = getPagination(searchParams);
 
-		const where =
+		const statusFilter = searchParams.get("status");
+
+		const where: Record<string, unknown> =
 			user.role === "LANDLORD"
 				? { property: { landlordId: user.userId } }
 				: user.role === "ADMIN"
 					? {}
 					: { studentId: user.userId };
+
+		if (statusFilter) {
+			where.status = statusFilter;
+		}
 
 		const [bookings, total] = await Promise.all([
 			prisma.booking.findMany({
