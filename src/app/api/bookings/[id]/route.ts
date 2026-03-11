@@ -52,18 +52,31 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 			return badRequest("Booking has already been processed");
 		}
 
-		const updated = await prisma.booking.update({
-			where: { id },
-			data: { status: parsed.data.status },
-			include: {
-				student: {
-					select: { id: true, name: true, email: true },
+		const updated = await prisma.$transaction(async (tx) => {
+			// When approving, mark the associated room as unavailable
+			if (parsed.data.status === "APPROVED" && booking.roomId) {
+				await tx.room.update({
+					where: { id: booking.roomId },
+					data: { isAvailable: false },
+				});
+			}
+			// When rejecting, ensure the room stays available (no-op since it wasn't changed yet,
+			// but being explicit here for clarity)
+
+			return tx.booking.update({
+				where: { id },
+				data: { status: parsed.data.status },
+				include: {
+					student: {
+						select: { id: true, name: true, email: true },
+					},
+					property: {
+						select: { id: true, title: true, location: true },
+					},
+					room: true,
+					payment: true,
 				},
-				property: {
-					select: { id: true, title: true, location: true },
-				},
-				payment: true,
-			},
+			});
 		});
 
 		return success(updated);

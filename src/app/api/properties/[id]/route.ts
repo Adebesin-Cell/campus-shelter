@@ -38,6 +38,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 				availability: {
 					orderBy: { date: "asc" },
 				},
+				roomUnits: true,
 				_count: { select: { bookings: true, reviews: true } },
 			},
 		});
@@ -46,7 +47,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 			return notFound("Property not found");
 		}
 
-		// Calculate average rating
+		// Calculate average rating and available room count
 		const avgRating =
 			property.reviews.length > 0
 				? property.reviews.reduce(
@@ -55,9 +56,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 					) / property.reviews.length
 				: 0;
 
+		const availableRooms = property.roomUnits.filter(
+			(r) => r.isAvailable,
+		).length;
+
 		return success({
 			...property,
 			avgRating: Math.round(avgRating * 10) / 10,
+			availableRooms,
 		});
 	} catch (error) {
 		console.error("[Property GET Error]", error);

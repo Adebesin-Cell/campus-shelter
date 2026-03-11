@@ -42,6 +42,18 @@ export const changePasswordSchema = z.object({
 	newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
+export const roomSchema = z.object({
+	name: z.string().min(1, "Room name is required"),
+	roomType: z.enum(["SINGLE", "SELF_CON", "MINI_FLAT"]),
+	priceMonthly: z.number().positive("Monthly price must be positive"),
+	priceWeekly: z.number().positive("Weekly price must be positive").optional(),
+	furnished: z.boolean().default(false),
+	description: z
+		.string()
+		.max(2000, "Description must be under 2000 characters")
+		.optional(),
+});
+
 export const createPropertySchema = z.object({
 	title: z.string().min(10, "Title must be at least 10 characters"),
 	description: z.string().min(10, "Description must be at least 10 characters"),
@@ -70,6 +82,7 @@ export const createPropertySchema = z.object({
 		.max(2000, "Notes must be under 2000 characters")
 		.optional()
 		.nullable(),
+	roomUnits: z.array(roomSchema).optional(),
 });
 
 export const updatePropertyStatusSchema = z
@@ -86,6 +99,7 @@ export const updatePropertySchema = createPropertySchema.partial();
 
 export const createBookingSchema = z.object({
 	propertyId: z.string().min(1, "Property ID is required"),
+	roomId: z.string().min(1).optional(),
 	leaseStart: z.string().datetime({ message: "Invalid lease start date" }),
 	leaseEnd: z.string().datetime({ message: "Invalid lease end date" }),
 });

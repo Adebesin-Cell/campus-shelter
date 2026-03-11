@@ -61,6 +61,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 				});
 			}
 
+			// Free up the room so it can be booked again
+			if (booking.roomId) {
+				await tx.room.update({
+					where: { id: booking.roomId },
+					data: { isAvailable: true },
+				});
+			}
+
 			return tx.booking.update({
 				where: { id },
 				data: {
@@ -75,6 +83,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 					property: {
 						select: { id: true, title: true, location: true },
 					},
+					room: true,
 					lease: true,
 				},
 			});

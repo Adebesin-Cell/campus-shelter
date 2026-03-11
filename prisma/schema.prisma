@@ -155,8 +155,31 @@ model Property {
   reviews             Review[]
   availability        Availability[]
   maintenanceRequests MaintenanceRequest[]
+  roomUnits           Room[]
 
   @@map("properties")
+}
+
+// ─── Room ──────────────────────────────────────────────────
+
+model Room {
+  id           String   @id @default(cuid())
+  propertyId   String
+  property     Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name         String
+  roomType     RoomType
+  priceMonthly Float
+  priceWeekly  Float?
+  furnished    Boolean  @default(false)
+  isAvailable  Boolean  @default(true)
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@index([propertyId])
+  @@map("rooms")
 }
 
 // ─── Availability ─────────────────────────────────────────
@@ -180,6 +203,8 @@ model Booking {
   student         User          @relation(fields: [studentId], references: [id], onDelete: Cascade)
   propertyId      String
   property        Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomId          String?
+  room            Room?         @relation(fields: [roomId], references: [id], onDelete: SetNull)
   status          BookingStatus @default(PENDING)
   paymentStatus   PaymentStatus @default(UNPAID)
   leaseStart      DateTime
@@ -194,6 +219,7 @@ model Booking {
 
   @@index([studentId])
   @@index([propertyId])
+  @@index([roomId])
   @@map("bookings")
 }
 

@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
 							priceMonthly: true,
 						},
 					},
+					room: true,
 					lease: true,
 					payment: true,
 				},
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		const { propertyId, leaseStart, leaseEnd } = parsed.data;
+		const { propertyId, roomId, leaseStart, leaseEnd } = parsed.data;
 		const startDate = new Date(leaseStart);
 		const endDate = new Date(leaseEnd);
 
@@ -120,16 +121,38 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
+		// Validate room if provided
+		if (roomId) {
+			const room = await prisma.room.findUnique({ where: { id: roomId } });
+			if (!room) return notFound("Room not found");
+			if (room.propertyId !== propertyId) {
+				return badRequest("Room does not belong to this property");
+			}
+			if (!room.isAvailable) {
+				return badRequest("This room is not available for booking");
+			}
+		}
+
 		// Check for overlapping bookings and create atomically
 		const booking = await prisma.$transaction(async (tx) => {
-			const overlapping = await tx.booking.findFirst({
-				where: {
-					propertyId,
-					status: { in: ["PENDING", "APPROVED"] },
-					leaseStart: { lt: endDate },
-					leaseEnd: { gt: startDate },
-				},
-			});
+			// If a specific room is requested, check for overlapping bookings on that room
+			// Otherwise check for property-level overlaps (backward compat for no-room bookings)
+			const overlapWhere = roomId
+				? {
+						roomId,
+						status: { in: ["PENDING" as const, "APPROVED" as const] },
+						leaseStart: { lt: endDate },
+						leaseEnd: { gt: startDate },
+					}
+				: {
+						propertyId,
+						roomId: null,
+						status: { in: ["PENDING" as const, "APPROVED" as const] },
+						leaseStart: { lt: endDate },
+						leaseEnd: { gt: startDate },
+					};
+
+			const overlapping = await tx.booking.findFirst({ where: overlapWhere });
 
 			if (overlapping) {
 				return null;
@@ -139,6 +162,7 @@ export async function POST(request: NextRequest) {
 				data: {
 					studentId: user.userId,
 					propertyId,
+					...(roomId ? { roomId } : {}),
 					leaseStart: startDate,
 					leaseEnd: endDate,
 				},
@@ -149,12 +173,17 @@ export async function POST(request: NextRequest) {
 					property: {
 						select: { id: true, title: true, location: true },
 					},
+					room: true,
 				},
 			});
 		});
 
 		if (!booking) {
-			return badRequest("Property is already booked for the selected dates");
+			return badRequest(
+				roomId
+					? "This room is already booked for the selected dates"
+					: "Property is already booked for the selected dates",
+			);
 		}
 
 		return created(booking);

@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
 						select: { id: true, name: true, email: true, phone: true },
 					},
 					reviews: { select: { rating: true } },
+					roomUnits: true,
 					_count: { select: { bookings: true, reviews: true } },
 				},
 				orderBy: { createdAt: "desc" },
@@ -120,10 +121,10 @@ export async function GET(request: NextRequest) {
 			useJsPagination ? Promise.resolve(0) : prisma.property.count({ where }),
 		]);
 
-		// Calculate average ratings
+		// Calculate average ratings and available room count
 		type PropertyWithReviews = (typeof properties)[number];
 		let result = properties.map((property: PropertyWithReviews) => {
-			const { reviews, ...rest } = property;
+			const { reviews, roomUnits, ...rest } = property;
 			const avgRating =
 				reviews.length > 0
 					? reviews.reduce(
@@ -131,7 +132,15 @@ export async function GET(request: NextRequest) {
 							0,
 						) / reviews.length
 					: 0;
-			return { ...rest, avgRating: Math.round(avgRating * 10) / 10 };
+			const availableRooms = roomUnits.filter(
+				(r: { isAvailable: boolean }) => r.isAvailable,
+			).length;
+			return {
+				...rest,
+				roomUnits,
+				avgRating: Math.round(avgRating * 10) / 10,
+				availableRooms,
+			};
 		});
 
 		if (minRatingValue !== null) {
@@ -193,18 +202,36 @@ export async function POST(request: NextRequest) {
 			landlordId = parsed.data.landlordId;
 		}
 
+		const { roomUnits, landlordId: _landlordId, ...propertyData } = parsed.data;
+
+		// Build the rooms to create: use provided roomUnits or auto-create one from the property defaults
+		const roomsToCreate =
+			roomUnits && roomUnits.length > 0
+				? roomUnits
+				: [
+						{
+							name: "Room 1",
+							roomType: parsed.data.roomType,
+							priceMonthly: parsed.data.priceMonthly,
+							priceWeekly: parsed.data.priceWeekly,
+							furnished: parsed.data.furnished ?? false,
+						},
+					];
+
 		const property = await prisma.property.create({
 			data: {
-				...parsed.data,
+				...propertyData,
 				availableFrom: new Date(parsed.data.availableFrom),
 				landlordId,
 				status: "PENDING_APPROVAL",
 				approved: false,
+				roomUnits: { create: roomsToCreate },
 			},
 			include: {
 				landlord: {
 					select: { id: true, name: true, email: true, phone: true },
 				},
+				roomUnits: true,
 			},
 		});
 
