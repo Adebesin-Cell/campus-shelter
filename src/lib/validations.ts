@@ -151,3 +151,14 @@ export const initializePaymentSchema = z.object({
 export const refundPaymentSchema = z.object({
 	reason: z.string().min(5, "Refund reason is required"),
 });
+
+export const fundWalletSchema = z.object({
+	amount: z
+		.number()
+		.min(500, "Minimum funding amount is ₦500")
+		.max(1000000, "Maximum funding amount is ₦1,000,000"),
+});
+
+export const walletPaySchema = z.object({
+	bookingId: z.string().min(1, "Booking ID is required"),
+});
