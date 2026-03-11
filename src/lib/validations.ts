@@ -138,3 +138,16 @@ export const uploadDocumentSchema = z.object({
 	type: z.string().min(1, "Document type is required"),
 	fileUrl: z.string().url("Invalid file URL"),
 });
+
+export const saveBankDetailSchema = z.object({
+	bankCode: z.string().min(1, "Bank code is required"),
+	accountNumber: z.string().length(10, "Account number must be 10 digits"),
+});
+
+export const initializePaymentSchema = z.object({
+	bookingId: z.string().min(1, "Booking ID is required"),
+});
+
+export const refundPaymentSchema = z.object({
+	reason: z.string().min(5, "Refund reason is required"),
+});
