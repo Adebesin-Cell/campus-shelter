@@ -1,5 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { put } from "@vercel/blob";
 import type { NextRequest } from "next/server";
 import { AuthError, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +15,7 @@ import {
  * - file: the file to upload
  * - type: document type string (e.g. "ID", "LEASE", "TRANSCRIPT")
  *
- * Files are stored in public/uploads/ (can be swapped to S3/Cloudinary).
+ * Files are stored in Vercel Blob Storage.
  */
 export async function POST(request: NextRequest) {
 	try {
@@ -49,20 +48,16 @@ export async function POST(request: NextRequest) {
 			);
 		}
 
-		// Create uploads directory if it doesn't exist
-		const uploadsDir = join(process.cwd(), "public", "uploads");
-		await mkdir(uploadsDir, { recursive: true });
-
-		// Generate unique filename
+		// Upload to Vercel Blob Storage
 		const ext = file.name.split(".").pop() || "bin";
-		const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-		const filepath = join(uploadsDir, filename);
+		const filename = `${type.toLowerCase()}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
-		// Write file to disk
-		const bytes = await file.arrayBuffer();
-		await writeFile(filepath, Buffer.from(bytes));
+		const blob = await put(filename, file, {
+			access: "public",
+			contentType: file.type,
+		});
 
-		const fileUrl = `/uploads/${filename}`;
+		const fileUrl = blob.url;
 
 		// Store in database
 		let targetUserId = user.userId;
