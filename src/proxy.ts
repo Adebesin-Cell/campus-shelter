@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { env } from "./lib/env";
 
-const PUBLIC_PATHS = ["/api/docs", "/api-docs"];
+const PUBLIC_PATHS = ["/api/docs", "/api-docs", "/api/payments/webhook"];
 
 const CORS_HEADERS = {
 	"Access-Control-Allow-Origin": "*",

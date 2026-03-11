@@ -7,7 +7,7 @@ export const registerSchema = z.object({
 		.email("Invalid email address")
 		.transform((e) => e.toLowerCase()),
 	phone: z.string().optional(),
-	password: z.string().min(6, "Password must be at least 6 characters"),
+	password: z.string().min(8, "Password must be at least 8 characters"),
 	role: z.enum(["STUDENT", "LANDLORD"]).default("STUDENT"),
 	idCardUrl: z.string().min(1).optional(),
 });
@@ -34,12 +34,12 @@ export const forgotPasswordSchema = z.object({
 
 export const resetPasswordSchema = z.object({
 	token: z.string().min(1, "Reset token is required"),
-	newPassword: z.string().min(6, "Password must be at least 6 characters"),
+	newPassword: z.string().min(8, "Password must be at least 8 characters"),
 });
 
 export const changePasswordSchema = z.object({
 	currentPassword: z.string().min(1, "Current password is required"),
-	newPassword: z.string().min(6, "New password must be at least 6 characters"),
+	newPassword: z.string().min(8, "New password must be at least 8 characters"),
 });
 
 export const createPropertySchema = z.object({
@@ -137,4 +137,17 @@ export const updateMaintenanceSchema = z.object({
 export const uploadDocumentSchema = z.object({
 	type: z.string().min(1, "Document type is required"),
 	fileUrl: z.string().url("Invalid file URL"),
+});
+
+export const saveBankDetailSchema = z.object({
+	bankCode: z.string().min(1, "Bank code is required"),
+	accountNumber: z.string().length(10, "Account number must be 10 digits"),
+});
+
+export const initializePaymentSchema = z.object({
+	bookingId: z.string().min(1, "Booking ID is required"),
+});
+
+export const refundPaymentSchema = z.object({
+	reason: z.string().min(5, "Refund reason is required"),
 });

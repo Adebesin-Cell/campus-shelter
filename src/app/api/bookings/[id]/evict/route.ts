@@ -52,22 +52,32 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 			return badRequest("Only active (approved) bookings can be evicted");
 		}
 
-		const updated = await prisma.booking.update({
-			where: { id },
-			data: {
-				status: "EVICTED",
-				evictionReason: parsed.data.reason,
-				evictionDate: new Date(),
-			},
-			include: {
-				student: {
-					select: { id: true, name: true, email: true, phone: true },
+		const updated = await prisma.$transaction(async (tx) => {
+			// Terminate any active lease
+			if (booking.id) {
+				await tx.lease.updateMany({
+					where: { bookingId: id },
+					data: { terminatedAt: new Date() },
+				});
+			}
+
+			return tx.booking.update({
+				where: { id },
+				data: {
+					status: "EVICTED",
+					evictionReason: parsed.data.reason,
+					evictionDate: new Date(),
 				},
-				property: {
-					select: { id: true, title: true, location: true },
+				include: {
+					student: {
+						select: { id: true, name: true, email: true, phone: true },
+					},
+					property: {
+						select: { id: true, title: true, location: true },
+					},
+					lease: true,
 				},
-				lease: true,
-			},
+			});
 		});
 
 		return success(updated);
